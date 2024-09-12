@@ -1,14 +1,11 @@
 package com.cindy.edu_crud.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.UUID;
 
 @Getter

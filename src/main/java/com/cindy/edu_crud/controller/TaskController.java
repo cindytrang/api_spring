@@ -2,7 +2,6 @@ package com.cindy.edu_crud.controller;
 
 import com.cindy.edu_crud.controller.dto.TaskDto;
 import com.cindy.edu_crud.controller.dto.TaskDtoLocalDueDate;
-import com.cindy.edu_crud.infrastructure.InvalidDatesException;
 import com.cindy.edu_crud.model.Status;
 import com.cindy.edu_crud.model.Task;
 import com.cindy.edu_crud.service.TaskService;
@@ -20,11 +19,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TaskController {
     private final TaskService taskService;
-
-//    @GetMapping("/health")
-//    public ResponseEntity<Optional<Task>> health() {
-//        return ResponseEntity.ok().build();
-//    }
 
     @GetMapping("/by-id/{uuid}")
     public ResponseEntity<Optional<Task>> findById(@PathVariable UUID uuid) {
@@ -51,7 +45,6 @@ public class TaskController {
         return ResponseEntity.ok(taskService.filterByStatus(status));
     }
 
-    //obiekt transferowy
     @PutMapping("/{uuid}")
     public ResponseEntity<Task> update(@RequestBody TaskDto task, @PathVariable UUID uuid) {
         Task taskToSave = Task.builder().name(task.getName()).status(Status.valueOf(task.getStatus())).localDueDate(LocalDateTime.parse(task.getLocalDueDate())).build();
