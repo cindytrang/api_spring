@@ -27,12 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ExtendWith(MockitoExtension.class)
 public class TaskFileRepositoryTest {
 	@Autowired
 	private MockMvc mockMvc;
 
-	@Mock
+	@Autowired
 	private TaskFileRepository taskFileRepository;
 
 	@BeforeEach
