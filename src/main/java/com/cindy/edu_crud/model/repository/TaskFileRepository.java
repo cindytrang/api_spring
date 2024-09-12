@@ -63,9 +63,9 @@ public class TaskFileRepository implements Repo<Task, UUID> {
     }
 
     public void setLocalDueDate(LocalDateTime localDateTime, UUID uuid) {
-        Optional<Task> task = findById(uuid);
-        task.get().setLocalDueDate(localDateTime);
-        task.orElse(null);
+        Task task = findById(uuid).orElseThrow();
+        task.setLocalDueDate(localDateTime);
+        save(task);
     }
 
     public List<Task> findAllByCreatedAtBetween(LocalDateTime startDateTime, LocalDateTime endDateTime) {

@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface TaskRepository extends JpaRepository<Task, UUID> , Repo<Task, UUID> {
+public interface TaskRepository extends JpaRepository<Task, UUID>, Repo<Task, UUID> {
     //  Query method
     List<Task> findAllByStatus(Status status);
 
@@ -26,7 +26,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID> , Repo<Task, U
 
     @Transactional
     @Modifying
-    @Query("UPDATE Task t SET t.localDueDate = ?1 WHERE t.uuid = ?2") //TODO: check if the ' should be added like: '?1'
+    @Query("UPDATE Task t SET t.localDueDate = ?1 WHERE t.uuid = ?2")
+        //TODO: check if the ' should be added like: '?1'
     void setLocalDueDate(LocalDateTime localDueDate, UUID uuid);
 }
 

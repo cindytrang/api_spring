@@ -20,7 +20,7 @@ public class TaskService {
 
     public Task save(Task task) {
         Task existingTask = repositoryContext.findById(task.getUuid()).orElse(null);
-        if(!Objects.isNull(existingTask)) {
+        if (!Objects.isNull(existingTask)) {
             task.setCreatedAt(existingTask.getCreatedAt());
             if (task.getLocalDueDate().isBefore(task.getCreatedAt()))
                 throw new InvalidDatesException("Local date: " + task.getLocalDueDate() + " is before create date: " + task.getCreatedAt());
@@ -58,13 +58,13 @@ public class TaskService {
     }
 
     public List<Task> filterByDateRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        if(startDateTime.isAfter(endDateTime))
+        if (startDateTime.isAfter(endDateTime))
             throw new InvalidDatesException("Invalid dates: " + startDateTime + " " + endDateTime);
         return repositoryContext.findAllByCreatedAtBetween(startDateTime, endDateTime);
     }
 
-    public List<Task> filterByDueDateRange(LocalDateTime startDateTime, LocalDateTime endDateTime){
-        if(startDateTime.isAfter(endDateTime))
+    public List<Task> filterByDueDateRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        if (startDateTime.isAfter(endDateTime))
             throw new InvalidDatesException("Invalid dates range, start: " + startDateTime + ", end: " + endDateTime);
         return repositoryContext.findAllByLocalDueDateBetween(startDateTime, endDateTime);
     }

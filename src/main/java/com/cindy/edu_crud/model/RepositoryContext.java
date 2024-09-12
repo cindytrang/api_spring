@@ -42,7 +42,7 @@ public class RepositoryContext implements Repo<Task, UUID> {
     }
 
     @Override
-    public List<Task> findAllByCreatedAtBetween(LocalDateTime startDateTime, LocalDateTime endDateTime)  {
+    public List<Task> findAllByCreatedAtBetween(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         return repository.findAllByCreatedAtBetween(startDateTime, endDateTime);
     }
 

@@ -1,0 +1,43 @@
+# Default configuration (if no profile is active)
+spring:
+  application:
+    name: edu-crud
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/edu-crud
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: admin123
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 30
+          order_inserts: true
+
+app:
+  persistence:
+    type: file
+#---
+## Test profile configuration
+#spring:
+#  config:
+#    activate:
+#      on-profile: test
+#
+#app:
+#  persistence:
+#    type: db
+#---
+## Production profile configuration
+#spring:
+#  config:
+#    activate:
+#      on-profile: prod
+#
+#app:
+#  persistence:
+#    type: db
