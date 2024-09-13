@@ -5,6 +5,7 @@ import com.cindy.edu_crud.model.Task;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -19,11 +20,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@RequiredArgsConstructor
 @Service
 public class DataImporter {
     private final TaskService taskService;
 
+    @Autowired
+    public DataImporter(TaskService taskService) {
+        this.taskService = taskService;
+    }
     public void importData() {
         System.out.println(LocalDateTime.now() + " com.cindy.edu_crud.service.DataImporter.importData executed");
 

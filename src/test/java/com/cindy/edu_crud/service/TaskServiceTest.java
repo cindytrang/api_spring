@@ -1,120 +1,205 @@
 package com.cindy.edu_crud.service;
 
+import com.cindy.edu_crud.infrastructure.InvalidDatesException;
 import com.cindy.edu_crud.model.RepositoryContext;
-import com.cindy.edu_crud.model.Task;
-import org.junit.jupiter.api.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import java.time.LocalDateTime;
-import java.util.UUID;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Optional;
 import com.cindy.edu_crud.model.Status;
+import com.cindy.edu_crud.model.Task;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-@SpringBootTest
-public class TaskServiceTest {
-	@Autowired
-	private TaskService taskService;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-	@MockBean
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class TaskServiceTest {
+
+	@Mock
 	private RepositoryContext repositoryContext;
 
+	@InjectMocks
+	private TaskService taskService;
+
+	@BeforeEach
+	void setUp() {
+		MockitoAnnotations.openMocks(this);
+	}
+
 	@Test
-	public void saveTest() {
-		// Arrange
+	void testSave_NewTask() {
 		Task task = new Task();
-		UUID taskId = UUID.randomUUID();
-		Task expected = Task.builder()
-				.uuid(taskId)
-				.name("Example Task")
-				.status(Status.IN_PROGRESS)
-				.localDueDate(LocalDateTime.parse("2023-08-21T10:00:00"))
-				.build();
+		task.setUuid(UUID.randomUUID());
+		task.setLocalDueDate(LocalDateTime.now().plusDays(1));
 
-		when(taskService.save(task)).thenReturn(expected);
+		when(repositoryContext.findById(task.getUuid())).thenReturn(Optional.empty());
+		when(repositoryContext.save(task)).thenReturn(task);
 
-		// Act
-		Task actual = taskService.save(task);
+		Task savedTask = taskService.save(task);
 
-		// Assert
-		assertEquals(expected, actual);
+		assertNotNull(savedTask);
+		verify(repositoryContext).save(task);
 	}
 
 	@Test
-	public void updateDueDateTest() {
-		LocalDateTime localDueDate = null;
-		UUID uuid = null;
-		taskService.updateDueDate(localDueDate, uuid);
+	void testSave_ExistingTask() {
+		Task existingTask = new Task();
+		existingTask.setUuid(UUID.randomUUID());
+		existingTask.setCreatedAt(LocalDateTime.now().minusDays(1));
+
+		Task updatedTask = new Task();
+		updatedTask.setUuid(existingTask.getUuid());
+		updatedTask.setLocalDueDate(LocalDateTime.now().plusDays(1));
+
+		when(repositoryContext.findById(existingTask.getUuid())).thenReturn(Optional.of(existingTask));
+		when(repositoryContext.save(updatedTask)).thenReturn(updatedTask);
+
+		Task savedTask = taskService.save(updatedTask);
+
+		assertNotNull(savedTask);
+		assertEquals(existingTask.getCreatedAt(), savedTask.getCreatedAt());
+		verify(repositoryContext).save(updatedTask);
 	}
 
 	@Test
-	public void findAllTest() {
-		List<Task> expected = new ArrayList<>();
-		List<Task> actual = taskService.findAll();
+	void testSave_InvalidDates() {
+		Task existingTask = new Task();
+		existingTask.setUuid(UUID.randomUUID());
+		existingTask.setCreatedAt(LocalDateTime.now());
 
-		assertEquals(expected, actual);
+		Task updatedTask = new Task();
+		updatedTask.setUuid(existingTask.getUuid());
+		updatedTask.setLocalDueDate(LocalDateTime.now().minusDays(1));
+
+		when(repositoryContext.findById(existingTask.getUuid())).thenReturn(Optional.of(existingTask));
+
+		assertThrows(InvalidDatesException.class, () -> taskService.save(updatedTask));
 	}
 
 	@Test
-	public void findByIdTest() {
-		UUID uuid = null;
-		Optional<Task> expected = null;
-		Optional<Task> actual = taskService.findById(uuid);
+	void testUpdateDueDate() {
+		UUID uuid = UUID.randomUUID();
+		LocalDateTime newDueDate = LocalDateTime.now().plusDays(1);
 
-		assertEquals(expected, actual);
+		taskService.updateDueDate(newDueDate, uuid);
+
+		verify(repositoryContext).setLocalDueDate(newDueDate, uuid);
 	}
 
 	@Test
-	public void deleteTest() {
-		UUID uuid = null;
-		UUID expected = null;
-		UUID actual = taskService.delete(uuid);
+	void testFindAll() {
+		List<Task> tasks = Arrays.asList(new Task(), new Task());
+		when(repositoryContext.findAll()).thenReturn(tasks);
 
-		assertEquals(expected, actual);
+		List<Task> result = taskService.findAll();
+
+		assertEquals(tasks, result);
 	}
 
 	@Test
-	public void deleteAllTest() {
+	void testFindById() {
+		UUID uuid = UUID.randomUUID();
+		Task task = new Task();
+		when(repositoryContext.findById(uuid)).thenReturn(Optional.of(task));
+
+		Optional<Task> result = taskService.findById(uuid);
+
+		assertTrue(result.isPresent());
+		assertEquals(task, result.get());
+	}
+
+	@Test
+	void testDelete() {
+		UUID uuid = UUID.randomUUID();
+		Task task = new Task();
+		when(repositoryContext.findById(uuid)).thenReturn(Optional.of(task));
+
+		UUID result = taskService.delete(uuid);
+
+		assertEquals(uuid, result);
+		verify(repositoryContext).delete(task);
+	}
+
+	@Test
+	void testDeleteAll() {
 		taskService.deleteAll();
+
+		verify(repositoryContext).deleteAll();
 	}
 
 	@Test
-	public void deleteListTest() {
-		List<UUID> list = new ArrayList<>();
-		taskService.deleteList(list);
+	void testDeleteList() {
+		UUID uuid1 = UUID.randomUUID();
+		UUID uuid2 = UUID.randomUUID();
+		Task task1 = new Task();
+		Task task2 = new Task();
+
+		when(repositoryContext.findById(uuid1)).thenReturn(Optional.of(task1));
+		when(repositoryContext.findById(uuid2)).thenReturn(Optional.of(task2));
+
+		taskService.deleteList(Arrays.asList(uuid1, uuid2));
+
+		verify(repositoryContext).delete(task1);
+		verify(repositoryContext).delete(task2);
 	}
 
 	@Test
-	public void filterByDateRangeTest() {
-		LocalDateTime startDateTime = null;
-		LocalDateTime endDateTime = null;
-		List<Task> expected = new ArrayList<>();
-		List<Task> actual = taskService.filterByDateRange(startDateTime, endDateTime);
+	void testFilterByDateRange() {
+		LocalDateTime startDateTime = LocalDateTime.now();
+		LocalDateTime endDateTime = startDateTime.plusDays(1);
+		List<Task> tasks = Arrays.asList(new Task(), new Task());
 
-		assertEquals(expected, actual);
+		when(repositoryContext.findAllByCreatedAtBetween(startDateTime, endDateTime)).thenReturn(tasks);
+
+		List<Task> result = taskService.filterByDateRange(startDateTime, endDateTime);
+
+		assertEquals(tasks, result);
 	}
 
 	@Test
-	public void filterByDueDateRangeTest() {
-		LocalDateTime startDateTime = null;
-		LocalDateTime endDateTime = null;
-		List<Task> expected = new ArrayList<>();
-		List<Task> actual = taskService.filterByDueDateRange(startDateTime, endDateTime);
+	void testFilterByDateRange_InvalidDates() {
+		LocalDateTime startDateTime = LocalDateTime.now();
+		LocalDateTime endDateTime = startDateTime.minusDays(1);
 
-		assertEquals(expected, actual);
+		assertThrows(InvalidDatesException.class, () -> taskService.filterByDateRange(startDateTime, endDateTime));
 	}
 
 	@Test
-	public void filterByStatusTest() {
-		Status status = Status.DONE;
-		List<Task> expected = new ArrayList<>();
-		List<Task> actual = taskService.filterByStatus(status);
+	void testFilterByDueDateRange() {
+		LocalDateTime startDateTime = LocalDateTime.now();
+		LocalDateTime endDateTime = startDateTime.plusDays(1);
+		List<Task> tasks = Arrays.asList(new Task(), new Task());
 
-		assertEquals(expected, actual);
+		when(repositoryContext.findAllByLocalDueDateBetween(startDateTime, endDateTime)).thenReturn(tasks);
+
+		List<Task> result = taskService.filterByDueDateRange(startDateTime, endDateTime);
+
+		assertEquals(tasks, result);
+	}
+
+	@Test
+	void testFilterByDueDateRange_InvalidDates() {
+		LocalDateTime startDateTime = LocalDateTime.now();
+		LocalDateTime endDateTime = startDateTime.minusDays(1);
+
+		assertThrows(InvalidDatesException.class, () -> taskService.filterByDueDateRange(startDateTime, endDateTime));
+	}
+
+	@Test
+	void testFilterByStatus() {
+		Status status = Status.TODO;
+		List<Task> tasks = Arrays.asList(new Task(), new Task());
+
+		when(repositoryContext.findAllByStatus(status)).thenReturn(tasks);
+
+		List<Task> result = taskService.filterByStatus(status);
+
+		assertEquals(tasks, result);
 	}
 }

@@ -19,6 +19,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import java.util.*;
 import java.time.LocalDateTime;
 import com.cindy.edu_crud.model.Status;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 public class TaskFileRepositoryTest {
 	@Autowired
 	private MockMvc mockMvc;
@@ -40,6 +42,7 @@ public class TaskFileRepositoryTest {
 	}
 	@Test
 	void save() {
+
 		UUID testUuid = UUID.randomUUID();
 		Task mockTask = Task.builder()
 				.uuid(testUuid)
@@ -48,20 +51,16 @@ public class TaskFileRepositoryTest {
 				.localDueDate(LocalDateTime.now().plusDays(1))
 				.build();
 
-		when(taskFileRepository.save(mockTask)).thenReturn(mockTask);
-		when(taskFileRepository.findById(testUuid)).thenReturn(Optional.of(mockTask));
-
+		taskFileRepository.save(mockTask);
 		Task savedTask = taskFileRepository.save(mockTask);
 		Task retrievedTask = taskFileRepository.findById(testUuid).orElse(null);
 
-		assertEquals(savedTask, retrievedTask);
-
-		verify(taskFileRepository).save(mockTask);
-		verify(taskFileRepository).findById(testUuid);
+		assertThat(savedTask).isEqualToComparingFieldByField(retrievedTask);
 	}
 
 	@Test
 	public void findAll() {
+		taskFileRepository.deleteAll();
 		UUID testUuid = UUID.randomUUID();
 		Task mockTask1 = Task.builder()
 				.uuid(testUuid)
@@ -69,6 +68,7 @@ public class TaskFileRepositoryTest {
 				.status(Status.TODO)
 				.localDueDate(LocalDateTime.now().plusDays(1))
 				.build();
+
 		UUID testUuid2 = UUID.randomUUID();
 		Task mockTask2 = Task.builder()
 				.uuid(testUuid2)
@@ -76,18 +76,17 @@ public class TaskFileRepositoryTest {
 				.status(Status.TODO)
 				.localDueDate(LocalDateTime.now().plusDays(1))
 				.build();
+		taskFileRepository.save(mockTask1);
+		taskFileRepository.save(mockTask2);
+		List<Task> expected = Arrays.asList(mockTask1, mockTask2);
 
-		List<Task> expected = new ArrayList<>();
-		expected.add(mockTask1);
-		expected.add(mockTask2);
-
-		// Mock the findAll() method to return the list of tasks
-		when(taskFileRepository.findAll()).thenReturn(expected);
 		List<Task> actualTasks = taskFileRepository.findAll();
 
-		// Compare the expected and actual task lists
-		assertEquals(expected, actualTasks);
-		verify(taskFileRepository).findAll();
+		assertEquals(2, actualTasks.size());
+		expected.sort(Comparator.comparing(Task::getName));
+		actualTasks.sort(Comparator.comparing(Task::getName));
+
+		assertThat(actualTasks).usingRecursiveComparison().isEqualTo(expected);
 	}
 
 	@Test
@@ -99,11 +98,12 @@ public class TaskFileRepositoryTest {
 				.status(Status.TODO)
 				.localDueDate(LocalDateTime.now().plusDays(1))
 				.build();
-// TODO Check again
+
+
 		Task savedTask = taskFileRepository.save(mockTask);
 		Task objectRetrievedTask = taskFileRepository.findById(testUuid).orElse(null);
 
-		assertEquals(savedTask, objectRetrievedTask);
+		assertThat(objectRetrievedTask).isEqualToComparingFieldByField(savedTask);
 	}
 
 	@Test
@@ -149,7 +149,6 @@ public class TaskFileRepositoryTest {
 				.build();
 
 		LocalDateTime localDateTime = LocalDateTime.now().plusDays(5);
-		when(taskFileRepository.save(mockTask)).thenReturn(mockTask);
 		Task actual = taskFileRepository.save(mockTask);
 		taskFileRepository.setLocalDueDate(localDateTime,testUuid);
 
@@ -180,32 +179,36 @@ public class TaskFileRepositoryTest {
 
 	@Test
 	public void testFindAllByStatus() {
-		// TODO Check again
+ 		taskFileRepository.deleteAll();
 
-		UUID testUuid1 = UUID.randomUUID();
 		Task todoTask = Task.builder()
-				.uuid(testUuid1)
+				.uuid(UUID.randomUUID())
 				.name("Test Task 1")
-				.status(Status.DONE)
+				.status(Status.TODO)
 				.localDueDate(LocalDateTime.now().plusDays(1))
 				.build();
+		taskFileRepository.save(todoTask);
 
-		UUID testUuid2 = UUID.randomUUID();
 		Task doneTask = Task.builder()
-				.uuid(testUuid2)
+				.uuid(UUID.randomUUID())
 				.name("Test Task 2")
 				.status(Status.DONE)
 				.localDueDate(LocalDateTime.now().plusDays(1))
 				.build();
+		taskFileRepository.save(doneTask);
 
 		List<Task> doneResult = taskFileRepository.findAllByStatus(Status.DONE);
 		assertEquals(1, doneResult.size());
-		assertEquals(doneTask, doneResult.get(0));
+		assertEquals(doneTask.getUuid(), doneResult.get(0).getUuid());
+		assertEquals(doneTask.getName(), doneResult.get(0).getName());
+		assertEquals(Status.DONE, doneResult.get(0).getStatus());
 
 		List<Task> todoResult = taskFileRepository.findAllByStatus(Status.TODO);
 		assertEquals(1, todoResult.size());
-		assertEquals(todoTask, todoResult.get(0));
+		assertEquals(todoTask.getUuid(), todoResult.get(0).getUuid());
+		assertEquals(todoTask.getName(), todoResult.get(0).getName());
+		assertEquals(Status.TODO, todoResult.get(0).getStatus());
 
-		verify(taskFileRepository, times(2)).findAll();
+		assertEquals(2, taskFileRepository.findAll().size());
 	}
 }
